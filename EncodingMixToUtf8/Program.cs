@@ -1,10 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 using CommandLine;
 using EncodingMixToUtf8.SimpleHelpers;
+using System.Text.RegularExpressions;
 
 namespace EncodingMixToUtf8
 {
@@ -16,12 +17,13 @@ namespace EncodingMixToUtf8
 
             if (!Parser.Default.ParseArguments(Environment.GetCommandLineArgs(), options)) return;
 
-            char[] separator = {';'};
+            char[] separator = { ';' };
 
             string[] exts = options.SearchExtensions.Split(separator, StringSplitOptions.RemoveEmptyEntries);
 
             var encodingMap = new Dictionary<Encoding, List<string>>();
             var unknownEncodingFiles = new List<string>();
+            var excludedFiles = new List<string>();
 
             int usingEncoding = string.IsNullOrWhiteSpace(options.ConvertFromSelectedCodePageOnly)
                 ? 0
@@ -62,8 +64,13 @@ namespace EncodingMixToUtf8
             foreach (string file in Directory.EnumerateFiles(options.PathToScan, "*.*", SearchOption.AllDirectories).
                 Where(file => exts.Any(x => file.EndsWith(x, StringComparison.OrdinalIgnoreCase))))
             {
-                Encoding encoding = FileEncoding.DetectFileEncoding(file);
+                if (Regex.IsMatch(file, options.ExcludeReg))
+                {
+                    excludedFiles.Add(file);
+                    continue;
+                }
 
+                Encoding encoding = FileEncoding.DetectFileEncoding(file);
                 if (encoding != null)
                 {
                     int codePage = encoding.CodePage;
@@ -113,8 +120,9 @@ namespace EncodingMixToUtf8
 
             sb.Append($"Found encodings: {Environment.NewLine}\t");
             sb.AppendLine(
-                $"{string.Join(Environment.NewLine+"\t", encodingMap.Select(pair => $"{pair.Key.WebName} [{pair.Key.EncodingName}] <{pair.Key.CodePage}>: {pair.Value.Count}"))}");
+                $"{string.Join(Environment.NewLine + "\t", encodingMap.Select(pair => $"{pair.Key.WebName} [{pair.Key.EncodingName}] <{pair.Key.CodePage}>: {pair.Value.Count}"))}");
             sb.AppendLine($"\tUnknown: {unknownEncodingFiles.Count}");
+            sb.AppendLine($"\tExcluded: {excludedFiles.Count}");
 
             sb.AppendLine();
             sb.AppendLine();
@@ -122,10 +130,13 @@ namespace EncodingMixToUtf8
             sb.Append(string.Join(Environment.NewLine,
                     encodingMap.Select(
                         pair =>
-                            $"{pair.Key.WebName} [{pair.Key.EncodingName}] <{pair.Key.CodePage}>:{Environment.NewLine}\t{string.Join(Environment.NewLine+ "\t", pair.Value)}{Environment.NewLine}")));
+                            $"{pair.Key.WebName} [{pair.Key.EncodingName}] <{pair.Key.CodePage}>:{Environment.NewLine}\t{string.Join(Environment.NewLine + "\t", pair.Value)}{Environment.NewLine}")));
 
             sb.Append(
-                $"{Environment.NewLine}UnknownEncoding:{Environment.NewLine}\t{string.Join(Environment.NewLine+ "\t", unknownEncodingFiles)}");
+                $"{Environment.NewLine}UnknownEncoding:{Environment.NewLine}\t{string.Join(Environment.NewLine + "\t", unknownEncodingFiles)}");
+
+            sb.Append(
+                $"{Environment.NewLine}tExcluded Files:{Environment.NewLine}\t{string.Join(Environment.NewLine + "\t", excludedFiles)}");
 
             File.WriteAllText(options.LogFilename, sb.ToString());
         }

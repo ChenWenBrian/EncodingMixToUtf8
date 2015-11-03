@@ -57,6 +57,11 @@ I wish to thanks all the authors for their hard work. It greatly simplifies the 
   -m, --search-extension    (Default: .cs;.vb;.settings;.resx) Search file
                             extensions
 
+  -e, --exclude             (Default: \bTemporaryGeneratedFile_\w{8}(?:-\w{4}){3}-\w{12}\b) 
+                            Exclude files that matched with regex, so that these files will
+                            be skiped during the process.
+                            Default value will skip VS compiler generated files.
+
   -c, --codepage            Restrictions on converting from selected codepage
                             only. Highly recommended to convert only selected
                             codepages instead of everything due to chances of

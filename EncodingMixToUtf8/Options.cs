@@ -1,4 +1,4 @@
-﻿using CommandLine;
+using CommandLine;
 using CommandLine.Text;
 
 namespace EncodingMixToUtf8
@@ -19,6 +19,12 @@ namespace EncodingMixToUtf8
         /// </summary>
         [Option('m', "search-extension", DefaultValue = ".cs;.vb;.settings;.resx", HelpText = "Search file extensions")]
         public string SearchExtensions { get; set; }
+
+        /// <summary>
+        /// Gets or sets the search extension for files
+        /// </summary>
+        [Option('e', "exclude", DefaultValue = @"\bTemporaryGeneratedFile_\w{8}(?:-\w{4}){3}-\w{12}\b", HelpText = "Exclude files that matched with regex")]
+        public string ExcludeReg { get; set; }
 
         /// <summary>
         /// Gets or sets the restrictions to convert from selected code page only.
